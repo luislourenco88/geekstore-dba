@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geek Store DBA - FAPCE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+        body {
+            background-color: #050505;
+            color: #4ade80;
+            font-family: 'VT323', monospace;
+            overflow-x: hidden;
+        }
+
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        /* Efeito de Monitor CRT Retro */
+        .scanlines {
+            position: relative;
+        }
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 50;
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .terminal-input {
+            background-color: #0a0a0a;
+            color: #4ade80;
+            border: 2px solid #16a34a;
+            outline: none;
+            resize: vertical;
+        }
+        
+        .terminal-input:focus {
+            border-color: #4ade80;
+            box-shadow: 0 0 10px #4ade80;
+        }
+
+        .btn-retro {
+            background-color: #16a34a;
+            color: #000;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            border-bottom: 4px solid #14532d;
+        }
+        .btn-retro:hover {
+            background-color: #4ade80;
+            transform: translateY(2px);
+            border-bottom: 2px solid #14532d;
+        }
+        .btn-retro:active {
+            transform: translateY(4px);
+            border-bottom: 0px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            color: #a7f3d0;
+        }
+        th, td {
+            border: 1px solid #16a34a;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #14532d;
+            color: #4ade80;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col scanlines">
+
+    <!-- Header FAPCE -->
+    <header class="bg-gray-900 border-b-4 border-green-700 p-4 text-center z-10 flex flex-col md:flex-row justify-between items-center px-8 relative">
+        <div class="flex items-center gap-4">
+            <div class="text-4xl">🎓</div>
+            <div class="text-left">
+                <h1 class="pixel-font text-xl text-white tracking-widest">FAPCE</h1>
+                <p class="text-green-500 text-sm">Faculdade de Tecnologia</p>
+            </div>
+        </div>
+        <div class="text-right mt-4 md:mt-0">
+            <h2 class="font-bold text-lg text-green-400">Prof. Luis Lourenço de Oliveira Filho</h2>
+            <p class="text-xs text-green-600">luis.filho@fapce.edu.br</p>
+        </div>
+    </header>
+
+    <!-- Notificação de Sucesso (Não-bloqueante) -->
+    <div id="success-toast" class="hidden fixed top-24 right-8 bg-green-900 border-4 border-green-500 p-4 shadow-2xl z-40 max-w-sm rounded shadow-[0_0_15px_rgba(74,222,128,0.5)] transform transition-transform duration-300">
+        <h3 class="pixel-font text-sm text-white mb-3">🔥 QUERY CORRETA!</h3>
+        <p class="text-green-300 text-sm mb-4">A base de dados retornou as informações esperadas.</p>
+        <button onclick="nextLevel()" class="btn-retro pixel-font text-xs py-2 px-4 w-full">Próximo Desafio >></button>
+    </div>
+
+    <!-- Modal Customizado de Alerta -->
+    <div id="custom-modal" class="hidden fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 px-4">
+        <div class="bg-gray-900 border-4 border-green-600 p-6 max-w-lg w-full text-center shadow-[0_0_20px_rgba(22,163,74,0.6)]">
+            <h2 id="modal-title" class="pixel-font text-green-500 text-lg mb-4 leading-relaxed"></h2>
+            <p id="modal-msg" class="text-xl mb-6 text-green-200"></p>
+            <button onclick="closeModal()" class="btn-retro pixel-font text-sm px-6 py-3">ENTENDIDO</button>
+        </div>
+    </div>
+
+    <!-- Container Principal -->
+    <main class="flex-grow container mx-auto p-4 z-10 flex flex-col items-center justify-center">
+        
+        <!-- Tela de Login -->
+        <section id="login-screen" class="w-full max-w-md bg-gray-900 border-4 border-green-700 p-8 text-center shadow-lg">
+            <div class="text-6xl mb-4">👾</div>
+            <h2 class="pixel-font text-xl mb-6 text-white leading-loose">GEEK STORE<br>DBA TERMINAL</h2>
+            <p class="text-lg text-green-500 mb-6">Identifique-se no sistema para iniciar seu turno.</p>
+            
+            <div class="space-y-4">
+                <input type="text" id="aluno-nome" placeholder="Nome Completo" class="w-full p-3 terminal-input pixel-font text-xs" autocomplete="off">
+                <input type="text" id="aluno-matricula" placeholder="Matrícula FAPCE" class="w-full p-3 terminal-input pixel-font text-xs" autocomplete="off">
+                <button onclick="startGame()" class="btn-retro pixel-font text-sm w-full py-4 mt-4">INICIAR SESSÃO</button>
+            </div>
+            <p class="text-red-500 text-xs mt-6">⚠️ AVISO: Não saia desta aba ou mude de janela após iniciar. O sistema de anti-cheat reiniciará seu progresso caso o foco seja perdido.</p>
+        </section>
+
+        <!-- Tela do Jogo -->
+        <section id="game-screen" class="hidden w-full max-w-4xl flex flex-col md:flex-row gap-6">
+            
+            <!-- Painel do NPC -->
+            <div class="md:w-1/3 flex flex-col gap-4">
+                <div class="bg-gray-900 border-4 border-green-700 p-4 relative">
+                    <div class="text-5xl absolute -top-6 -left-4 bg-gray-900 rounded-full border-2 border-green-700 p-2">👨‍💻</div>
+                    <h3 class="pixel-font text-xs text-green-400 mt-6 mb-2 border-b border-green-800 pb-2">GERENTE GEEK</h3>
+                    <p id="npc-text" class="text-xl text-white leading-relaxed">...</p>
+                    <div class="mt-4 text-right">
+                        <span id="level-indicator" class="bg-green-900 text-green-300 pixel-font text-[10px] px-2 py-1">Nível 1/7</span>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-900 border-2 border-green-900 p-4 text-sm text-green-600">
+                    <p class="font-bold mb-2">Estrutura da Tabela 'produtos':</p>
+                    <ul class="list-disc pl-5">
+                        <li>id (int)</li>
+                        <li>nome (varchar)</li>
+                        <li>categoria (varchar)</li>
+                        <li>preco (decimal)</li>
+                        <li>estoque (int)</li>
+                        <li>desconto_percentual (int)</li>
+                        <li>data_cadastro (date)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Terminal DBA -->
+            <div class="md:w-2/3 bg-gray-900 border-4 border-green-700 flex flex-col">
+                <div class="bg-green-900 p-2 flex justify-between items-center border-b-2 border-green-700">
+                    <span class="pixel-font text-xs text-green-200">Terminal SQL v2.0</span>
+                    <span class="text-xs text-green-400">fapce_db_prod</span>
+                </div>
+                <div class="p-4 flex-grow flex flex-col gap-4">
+                    <textarea id="sql-input" rows="5" class="w-full p-4 terminal-input text-xl font-bold" placeholder="Digite sua consulta SQL aqui..."></textarea>
+                    <button id="run-btn" onclick="runQuery()" class="btn-retro pixel-font text-sm py-3 self-end px-8">EXECUTE( );</button>
+                    
+                    <div class="mt-2 border-t-2 border-green-900 pt-4">
+                        <h4 class="pixel-font text-xs text-green-500 mb-2">> OUTPUT</h4>
+                        <div id="output-area" class="overflow-x-auto min-h-[150px] bg-black p-2 border border-green-900 text-lg">
+                            <p class="text-green-800">Aguardando comando...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tela de Vitória -->
+        <section id="victory-screen" class="hidden w-full max-w-2xl bg-gray-900 border-4 border-green-500 p-10 text-center">
+            <div class="text-7xl mb-6">🏆</div>
+            <h2 class="pixel-font text-2xl mb-4 text-white leading-loose">TURNO ENCERRADO<br>COM SUCESSO!</h2>
+            <p class="text-xl text-green-400 mb-8">Parabéns, você completou todos os desafios de manipulação de dados!</p>
+            
+            <div class="bg-black border-2 border-green-600 p-6 mb-6">
+                <p class="text-sm text-green-600 mb-2">SEU CÓDIGO DE VALIDAÇÃO (Copie e cole no AVA):</p>
+                <code id="validation-code" class="pixel-font text-sm text-green-300 break-all select-all"></code>
+            </div>
+            
+            <p class="text-sm text-green-500 mb-4">Atenção: Este código está vinculado à sua matrícula e à versão da prova gerada. Não o compartilhe.</p>
+        </section>
+
+    </main>
+
+    <!-- Footer Discreto e Área do Professor -->
+    <footer class="p-4 z-10 text-center text-xs text-green-900 mt-auto flex flex-col items-center">
+        <span id="version-display" class="mb-2 opacity-50">Versão: Aguardando Inicio</span>
+        <button onclick="toggleProfArea()" class="hover:text-green-600 underline">Área do Professor (Validador)</button>
+        
+        <div id="prof-area" class="hidden mt-4 bg-gray-900 border border-green-800 p-4 max-w-md w-full">
+            <input type="text" id="prof-mat" placeholder="Matrícula do Aluno" class="w-full p-2 mb-2 bg-black border border-green-900 text-green-500 text-center">
+            <input type="text" id="prof-hash" placeholder="Código FAPCE-..." class="w-full p-2 mb-2 bg-black border border-green-900 text-green-500 text-center">
+            <button onclick="validateHash()" class="w-full bg-green-900 text-green-300 p-2 hover:bg-green-800">Verificar Autenticidade</button>
+        </div>
+    </footer>
+
+    <script>
+        // --- CONFIGURAÇÃO E DADOS DOS DESAFIOS ---
+        const SECRET_KEY = 'FAPCE_SQL_SECRET_2026';
+        let gameState = 'login'; // login, playing, finished
+        let studentName = '';
+        let studentMatricula = '';
+        let currentVersionName = '';
+        let currentLevel = 0;
+        let selectedChallenges = [];
+
+        // O validador ignora espaços, quebras de linha e o ponto-e-vírgula final.
+        // Como a linguagem SQL tem várias sintaxes para a mesma coisa, permitimos um array de strings aceitáveis.
+        const gameVersions = {
+            'Alfa': [
+                {
+                    npc: "Preciso de uma lista simples. Retorne apenas as colunas `nome` e `categoria` de todos os produtos, sem nenhum filtro.",
+                    sqls: ["SELECT nome, categoria FROM produtos", "SELECT categoria, nome FROM produtos"],
+                    data: [{nome: 'Monitor 24"', categoria: 'Eletrônicos'}, {nome: 'Mouse Gamer', categoria: 'Acessórios'}]
+                },
+                {
+                    npc: "Preciso identificar os produtos baratos. Traga o `nome`, `categoria` e `preco` dos produtos que custam menos de 500.00.",
+                    sqls: ["SELECT nome, categoria, preco FROM produtos WHERE preco < 500", "SELECT nome, categoria, preco FROM produtos WHERE preco < 500.00"],
+                    data: [{nome: 'Mouse Gamer', categoria: 'Acessórios', preco: '120.00'}, {nome: 'Teclado', categoria: 'Acessórios', preco: '250.00'}]
+                },
+                {
+                    npc: "Temos produtos sem configuração de desconto. Busque o `nome` e o `desconto_percentual` onde o desconto seja NULO (NULL).",
+                    sqls: ["SELECT nome, desconto_percentual FROM produtos WHERE desconto_percentual IS NULL"],
+                    data: [{nome: 'Monitor 24"', desconto_percentual: 'NULL'}]
+                },
+                {
+                    npc: "Alerta de estoque! Retorne `nome`, `categoria` e `estoque`. Quero produtos com estoque menor ou igual a 10 OU que sejam da categoria 'Acessórios' com estoque igual a 0. Ordene pelo estoque do menor para o maior (ASC).",
+                    sqls: [
+                        "SELECT nome, categoria, estoque FROM produtos WHERE estoque <= 10 OR (categoria = 'Acessórios' AND estoque = 0) ORDER BY estoque ASC",
+                        "SELECT nome, categoria, estoque FROM produtos WHERE estoque <= 10 OR (categoria = 'Acessórios' AND estoque = 0) ORDER BY estoque"
+                    ],
+                    data: [{nome: 'Webcam', categoria: 'Acessórios', estoque: 0}, {nome: 'Gabinete', categoria: 'Hardware', estoque: 5}]
+                },
+                {
+                    npc: "Promoção! Retorne `nome`, `preco`, `desconto_percentual` e `data_cadastro` cadastrados entre '2023-01-01' e '2023-03-31' que tenham desconto maior que 0. Ordene pelo desconto do maior para o menor (DESC).",
+                    sqls: [
+                        "SELECT nome, preco, desconto_percentual, data_cadastro FROM produtos WHERE data_cadastro BETWEEN '2023-01-01' AND '2023-03-31' AND desconto_percentual > 0 ORDER BY desconto_percentual DESC",
+                        "SELECT nome, preco, desconto_percentual, data_cadastro FROM produtos WHERE data_cadastro >= '2023-01-01' AND data_cadastro <= '2023-03-31' AND desconto_percentual > 0 ORDER BY desconto_percentual DESC"
+                    ],
+                    data: [{nome: 'Cadeira Gamer', preco: '1500.00', desconto_percentual: 15, data_cadastro: '2023-02-15'}]
+                },
+                {
+                    npc: "Busca específica. Traga `nome`, `categoria` e `preco` se a categoria for 'Hardware' OU o nome contiver 'HD' (use ILIKE '%hd%'). O preço deve estar fora da faixa 350 a 1000 (menor que 350.00 ou maior que 1000.00).",
+                    sqls: [
+                        "SELECT nome, categoria, preco FROM produtos WHERE (categoria = 'Hardware' OR nome ILIKE '%hd%') AND (preco < 350 OR preco > 1000)",
+                        "SELECT nome, categoria, preco FROM produtos WHERE (categoria = 'Hardware' OR nome ILIKE '%hd%') AND (preco < 350.00 OR preco > 1000.00)",
+                        "SELECT nome, categoria, preco FROM produtos WHERE (categoria = 'Hardware' OR nome ILIKE '%hd%') AND preco NOT BETWEEN 350 AND 1000",
+                        "SELECT nome, categoria, preco FROM produtos WHERE (categoria = 'Hardware' OR nome ILIKE '%hd%') AND preco NOT BETWEEN 350.00 AND 1000.00"
+                    ],
+                    data: [{nome: 'HD Externo 1TB', categoria: 'Acessórios', preco: '300.00'}, {nome: 'Placa de Vídeo', categoria: 'Hardware', preco: '3500.00'}]
+                },
+                {
+                    npc: "Paginação da vitrine. Retorne TUDO (*) das categorias 'Eletrônicos', 'Hardware' ou 'Acessórios' (use IN). Ordene do preço mais caro para o mais barato (DESC). Quero exibir a página 3 (sendo 3 itens por pág, ou seja, LIMIT 3 OFFSET 6).",
+                    sqls: [
+                        "SELECT * FROM produtos WHERE categoria IN ('Eletrônicos', 'Hardware', 'Acessórios') ORDER BY preco DESC LIMIT 3 OFFSET 6",
+                        "SELECT * FROM produtos WHERE categoria IN ('Eletrônicos','Hardware','Acessórios') ORDER BY preco DESC LIMIT 3 OFFSET 6"
+                    ],
+                    data: [{id: 7, nome: 'SSD 512GB', categoria: 'Hardware', preco: '280.00', estoque: 30, desconto_percentual: 5, data_cadastro: '2023-05-10'}]
+                }
+            ],
+            'Beta': [
+                {
+                    npc: "Tarefa inicial. Selecione as colunas `nome` e `preco` de todos os produtos.",
+                    sqls: ["SELECT nome, preco FROM produtos"],
+                    data: [{nome: 'Mouse', preco: '50.00'}, {nome: 'Teclado', preco: '100.00'}]
+                },
+                {
+                    npc: "Quais produtos têm bastante estoque? Traga `nome`, `categoria` e `estoque` onde o estoque for maior que 20.",
+                    sqls: ["SELECT nome, categoria, estoque FROM produtos WHERE estoque > 20"],
+                    data: [{nome: 'Cabo HDMI', categoria: 'Acessórios', estoque: 50}]
+                },
+                {
+                    npc: "Quais produtos já possuem desconto? Traga `nome` e `desconto_percentual` onde o desconto_percentual NÃO é NULO (IS NOT NULL).",
+                    sqls: ["SELECT nome, desconto_percentual FROM produtos WHERE desconto_percentual IS NOT NULL"],
+                    data: [{nome: 'Webcam', desconto_percentual: 10}]
+                },
+                {
+                    npc: "Itens caros! Retorne `nome`, `categoria` e `preco` onde preco seja maior ou igual a 2000.00 OU (categoria 'Eletrônicos' E preco maior que 1000.00). Ordene pelo preco DESC.",
+                    sqls: ["SELECT nome, categoria, preco FROM produtos WHERE preco >= 2000 OR (categoria = 'Eletrônicos' AND preco > 1000) ORDER BY preco DESC", "SELECT nome, categoria, preco FROM produtos WHERE preco >= 2000.00 OR (categoria = 'Eletrônicos' AND preco > 1000.00) ORDER BY preco DESC"],
+                    data: [{nome: 'Notebook', categoria: 'Eletrônicos', preco: '4500.00'}]
+                },
+                {
+                    npc: "Campanha 2º Tri. Traga `nome`, `preco`, `desconto_percentual` e `data_cadastro` cadastrados de '2023-04-01' a '2023-06-30' com desconto > 5. Ordene pelo desconto ASC.",
+                    sqls: ["SELECT nome, preco, desconto_percentual, data_cadastro FROM produtos WHERE data_cadastro BETWEEN '2023-04-01' AND '2023-06-30' AND desconto_percentual > 5 ORDER BY desconto_percentual ASC", "SELECT nome, preco, desconto_percentual, data_cadastro FROM produtos WHERE data_cadastro BETWEEN '2023-04-01' AND '2023-06-30' AND desconto_percentual > 5 ORDER BY desconto_percentual"],
+                    data: [{nome: 'Mesa', preco: '700.00', desconto_percentual: 6, data_cadastro: '2023-05-15'}]
+                },
+                {
+                    npc: "Busca variada. Traga `nome`, `categoria` e `estoque`. Regras: (categoria 'Eletrônicos' OU nome contendo 'gamer' via ILIKE) E (estoque menor que 10 OU maior que 50).",
+                    sqls: ["SELECT nome, categoria, estoque FROM produtos WHERE (categoria = 'Eletrônicos' OR nome ILIKE '%gamer%') AND (estoque < 10 OR estoque > 50)"],
+                    data: [{nome: 'Monitor Gamer', categoria: 'Eletrônicos', estoque: 5}]
+                },
+                {
+                    npc: "Pequena vitrine. Retorne tudo (*) das categorias 'Móveis' ou 'Eletrônicos' usando IN. Ordene pelo preco do mais barato pro mais caro (ASC). Traga a pág 2 (2 itens por pág: LIMIT 2 OFFSET 2).",
+                    sqls: ["SELECT * FROM produtos WHERE categoria IN ('Móveis', 'Eletrônicos') ORDER BY preco ASC LIMIT 2 OFFSET 2", "SELECT * FROM produtos WHERE categoria IN ('Móveis', 'Eletrônicos') ORDER BY preco LIMIT 2 OFFSET 2"],
+                    data: [{id: 4, nome: 'Cadeira', categoria: 'Móveis', preco: '300.00', estoque: 15, desconto_percentual: 0, data_cadastro: '2023-01-20'}]
+                }
+            ],
+            'Gama': [
+                {
+                    npc: "Relatório básico. Retorne as colunas `nome` e `estoque` de todos os produtos.",
+                    sqls: ["SELECT nome, estoque FROM produtos"],
+                    data: [{nome: 'Processador', estoque: 12}, {nome: 'Cabo', estoque: 100}]
+                },
+                {
+                    npc: "Itens premium. Retorne `nome`, `categoria` e `preco` onde preco é maior que 1000.00.",
+                    sqls: ["SELECT nome, categoria, preco FROM produtos WHERE preco > 1000", "SELECT nome, categoria, preco FROM produtos WHERE preco > 1000.00"],
+                    data: [{nome: 'Placa de Vídeo', categoria: 'Hardware', preco: '3500.00'}]
+                },
+                {
+                    npc: "Faltou preencher o desconto! Traga `nome`, `categoria` e `desconto_percentual` dos itens cujo desconto é NULO (IS NULL).",
+                    sqls: ["SELECT nome, categoria, desconto_percentual FROM produtos WHERE desconto_percentual IS NULL"],
+                    data: [{nome: 'Memória RAM', categoria: 'Hardware', desconto_percentual: 'NULL'}]
+                },
+                {
+                    npc: "Urgência. Retorne `nome`, `categoria` e `estoque`. Condição: estoque menor que 5 OU (categoria 'Móveis' E estoque menor que 10). Ordenar por estoque ASC.",
+                    sqls: ["SELECT nome, categoria, estoque FROM produtos WHERE estoque < 5 OR (categoria = 'Móveis' AND estoque < 10) ORDER BY estoque ASC", "SELECT nome, categoria, estoque FROM produtos WHERE estoque < 5 OR (categoria = 'Móveis' AND estoque < 10) ORDER BY estoque"],
+                    data: [{nome: 'Mesa de Escritório', categoria: 'Móveis', estoque: 3}]
+                },
+                {
+                    npc: "Descontos médios. Traga `nome`, `preco` e `desconto_percentual` onde preco está BETWEEN 100.00 e 500.00, e desconto_percentual maior que 0. Ordenar pelo preco DESC.",
+                    sqls: ["SELECT nome, preco, desconto_percentual FROM produtos WHERE preco BETWEEN 100 AND 500 AND desconto_percentual > 0 ORDER BY preco DESC", "SELECT nome, preco, desconto_percentual FROM produtos WHERE preco BETWEEN 100.00 AND 500.00 AND desconto_percentual > 0 ORDER BY preco DESC"],
+                    data: [{nome: 'Teclado RGB', preco: '299.00', desconto_percentual: 10}]
+                },
+                {
+                    npc: "Busca de periféricos. Traga `nome`, `categoria` e `preco`. Regras: (categoria 'Acessórios' OU nome com 'fio' usando ILIKE) E (preco < 150.00 OU preco > 300.00).",
+                    sqls: ["SELECT nome, categoria, preco FROM produtos WHERE (categoria = 'Acessórios' OR nome ILIKE '%fio%') AND (preco < 150 OR preco > 300)", "SELECT nome, categoria, preco FROM produtos WHERE (categoria = 'Acessórios' OR nome ILIKE '%fio%') AND (preco < 150.00 OR preco > 300.00)"],
+                    data: [{nome: 'Mouse Sem Fio', categoria: 'Acessórios', preco: '120.00'}]
+                },
+                {
+                    npc: "Picos. Selecione tudo (*) de produtos em 'Hardware' ou 'Acessórios' (com IN). Ordene pelo estoque do maior para menor (DESC). Traga 4 itens pulando os 4 primeiros (LIMIT 4 OFFSET 4).",
+                    sqls: ["SELECT * FROM produtos WHERE categoria IN ('Hardware', 'Acessórios') ORDER BY estoque DESC LIMIT 4 OFFSET 4"],
+                    data: [{id: 8, nome: 'Cooler', categoria: 'Hardware', preco: '150.00', estoque: 25, desconto_percentual: 0, data_cadastro: '2023-07-01'}]
+                }
+            ],
+            'Delta': [
+                {
+                    npc: "Lista de datas. Retorne `nome` e `data_cadastro` de todos os registros na tabela produtos.",
+                    sqls: ["SELECT nome, data_cadastro FROM produtos"],
+                    data: [{nome: 'Hub USB', data_cadastro: '2023-01-10'}]
+                },
+                {
+                    npc: "O que tá acabando? Traga `nome`, `categoria` e `estoque` de produtos com estoque menor que 15.",
+                    sqls: ["SELECT nome, categoria, estoque FROM produtos WHERE estoque < 15"],
+                    data: [{nome: 'Fone de Ouvido', categoria: 'Acessórios', estoque: 8}]
+                },
+                {
+                    npc: "Desconto garantido. Selecione `nome`, `preco` e `desconto_percentual` se o desconto_percentual NÃO for NULO.",
+                    sqls: ["SELECT nome, preco, desconto_percentual FROM produtos WHERE desconto_percentual IS NOT NULL"],
+                    data: [{nome: 'Smartwatch', preco: '800.00', desconto_percentual: 12}]
+                },
+                {
+                    npc: "Traga `nome`, `categoria` e `preco` onde o preco for <= 300.00 OU (for 'Hardware' com estoque zerado). Ordenar por preco ASC.",
+                    sqls: ["SELECT nome, categoria, preco FROM produtos WHERE preco <= 300 OR (categoria = 'Hardware' AND estoque = 0) ORDER BY preco ASC", "SELECT nome, categoria, preco FROM produtos WHERE preco <= 300.00 OR (categoria = 'Hardware' AND estoque = 0) ORDER BY preco"],
+                    data: [{nome: 'Pendrive 32GB', categoria: 'Acessórios', preco: '45.00'}]
+                },
+                {
+                    npc: "Filtro combinado. Traga `nome`, `estoque` e `data_cadastro` para cadastros entre '2023-02-01' e '2023-05-31' com estoque BETWEEN 10 AND 50. Ordenar pela data_cadastro ASC.",
+                    sqls: ["SELECT nome, estoque, data_cadastro FROM produtos WHERE data_cadastro BETWEEN '2023-02-01' AND '2023-05-31' AND estoque BETWEEN 10 AND 50 ORDER BY data_cadastro ASC", "SELECT nome, estoque, data_cadastro FROM produtos WHERE data_cadastro BETWEEN '2023-02-01' AND '2023-05-31' AND estoque BETWEEN 10 AND 50 ORDER BY data_cadastro"],
+                    data: [{nome: 'Roteador', estoque: 22, data_cadastro: '2023-03-12'}]
+                },
+                {
+                    npc: "Busca especial. `nome`, `categoria` e `preco` de ('Móveis' OU contendo 'mesa' no nome via ILIKE) E preço menor que 500.00 OU maior que 1000.00.",
+                    sqls: ["SELECT nome, categoria, preco FROM produtos WHERE (categoria = 'Móveis' OR nome ILIKE '%mesa%') AND (preco < 500 OR preco > 1000)", "SELECT nome, categoria, preco FROM produtos WHERE (categoria = 'Móveis' OR nome ILIKE '%mesa%') AND (preco < 500.00 OR preco > 1000.00)"],
+                    data: [{nome: 'Mesa Digitalizadora', categoria: 'Eletrônicos', preco: '350.00'}, {nome: 'Cadeira Ergonomica', categoria: 'Móveis', preco: '1200.00'}]
+                },
+                {
+                    npc: "Fim do expediente. Traga TUDO (*) das categorias 'Eletrônicos', 'Móveis' ou 'Hardware' usando IN. Ordene pela data_cadastro (DESC). Paginação: traga 3 pulando 3 (LIMIT 3 OFFSET 3).",
+                    sqls: ["SELECT * FROM produtos WHERE categoria IN ('Eletrônicos', 'Móveis', 'Hardware') ORDER BY data_cadastro DESC LIMIT 3 OFFSET 3", "SELECT * FROM produtos WHERE categoria IN ('Eletrônicos','Móveis','Hardware') ORDER BY data_cadastro DESC LIMIT 3 OFFSET 3"],
+                    data: [{id: 14, nome: 'SSD 1TB', categoria: 'Hardware', preco: '400.00', estoque: 12, desconto_percentual: 5, data_cadastro: '2023-08-11'}]
+                }
+            ]
+        };
+
+        // --- SISTEMA DE ANTI-CHEAT ---
+        function handleVisibilityChange() {
+            // Penalizar o jogador se perder o foco, mas APENAS se estiver ativamente jogando
+            if (gameState === 'playing' && document.hidden !== undefined && document.hidden) {
+                punishPlayer();
+            }
+        }
+
+        window.addEventListener('blur', () => {
+            if (gameState === 'playing') punishPlayer();
+        });
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        function punishPlayer() {
+            gameState = 'login';
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('success-toast').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('version-display').innerText = 'Versão: Aguardando Inicio';
+            
+            showModal('🚨 FALHA DE SEGURANÇA', 'Você perdeu o foco da janela do jogo (mudou de aba ou tela). Para garantir a integridade da avaliação, seu progresso foi reiniciado. Volte ao início.');
+        }
+
+        // --- CONTROLE DE UI & MODAIS ---
+        function showModal(title, msg) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-msg').innerText = msg;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        // --- LÓGICA DO JOGO ---
+        function startGame() {
+            studentName = document.getElementById('aluno-nome').value.trim();
+            studentMatricula = document.getElementById('aluno-matricula').value.trim();
+
+            if (!studentName || !studentMatricula) {
+                showModal('ERRO DE AUTENTICAÇÃO', 'Por favor, preencha seu Nome e Matrícula para continuar.');
+                return;
+            }
+
+            // Selecionar Versão Aleatoriamente
+            const versionKeys = Object.keys(gameVersions);
+            currentVersionName = versionKeys[Math.floor(Math.random() * versionKeys.length)];
+            selectedChallenges = gameVersions[currentVersionName];
+            
+            currentLevel = 0;
+            gameState = 'playing';
+
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('version-display').innerText = `Versão Ativa: ${currentVersionName}`;
+            
+            loadLevel();
+        }
+
+        function loadLevel() {
+            const challenge = selectedChallenges[currentLevel];
+            document.getElementById('npc-text').innerHTML = challenge.npc;
+            document.getElementById('level-indicator').innerText = `Nível ${currentLevel + 1}/7`;
+            document.getElementById('sql-input').value = '';
+            document.getElementById('output-area').innerHTML = '<p class="text-green-800">Aguardando comando...</p>';
+            document.getElementById('success-toast').classList.add('hidden');
+            
+            // Re-habilitar terminal
+            document.getElementById('sql-input').disabled = false;
+            document.getElementById('run-btn').disabled = false;
+        }
+
+        // Normalizador avançado de SQL para aceitar variações razoáveis de digitação
+        function normalizeSQL(sql) {
+            return sql.toLowerCase()
+                .replace(/;/g, '') // Remove ponto e virgula
+                .replace(/\s+/g, ' ') // Espaços múltiplos viram um só
+                .replace(/\s*,\s*/g, ',') // Remove espaço ao redor de vírgula
+                .replace(/\s*=\s*/g, '=')
+                .replace(/\s*<\s*/g, '<')
+                .replace(/\s*>\s*/g, '>')
+                .replace(/\s*\(\s*/g, '(')
+                .replace(/\s*\)\s*/g, ')')
+                .replace(/"/g, "'") // Transforma aspas duplas em simples
+                .replace(/\.00/g, '') // Normaliza decimais zerados
+                .trim();
+        }
+
+        function runQuery() {
+            const inputSQL = document.getElementById('sql-input').value;
+            if (!inputSQL.trim()) {
+                showModal('ERRO DE SINTAXE', 'O terminal não aceita comandos vazios.');
+                return;
+            }
+
+            const challenge = selectedChallenges[currentLevel];
+            const normalizedInput = normalizeSQL(inputSQL);
+            
+            // Verifica se o input bate com alguma das opções aceitáveis
+            const isCorrect = challenge.sqls.some(validSql => normalizeSQL(validSql) === normalizedInput);
+
+            if (isCorrect) {
+                renderOutputTable(challenge.data);
+                
+                // Trava o terminal temporariamente
+                document.getElementById('sql-input').disabled = true;
+                document.getElementById('run-btn').disabled = true;
+                
+                // Mostra o toast não bloqueante
+                document.getElementById('success-toast').classList.remove('hidden');
+            } else {
+                showModal('ACESSO NEGADO', 'Sintaxe SQL incorreta ou o resultado retornado não atende ao pedido do gerente. Tente novamente.');
+            }
+        }
+
+        function renderOutputTable(dataArray) {
+            if (!dataArray || dataArray.length === 0) return;
+            
+            let html = '<table><thead><tr>';
+            // Headers
+            const keys = Object.keys(dataArray[0]);
+            keys.forEach(key => { html += `<th>${key}</th>`; });
+            html += '</tr></thead><tbody>';
+            
+            // Rows
+            dataArray.forEach(row => {
+                html += '<tr>';
+                keys.forEach(key => { html += `<td>${row[key]}</td>`; });
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            
+            document.getElementById('output-area').innerHTML = html;
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            if (currentLevel >= selectedChallenges.length) {
+                finishGame();
+            } else {
+                loadLevel();
+            }
+        }
+
+        function finishGame() {
+            gameState = 'finished'; // Desliga o anti-cheat de blur
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('success-toast').classList.add('hidden');
+            document.getElementById('victory-screen').classList.remove('hidden');
+
+            // Gerar Hash seguro: btoa(Matricula|Versão|Segredo)
+            const rawString = `${studentMatricula}|${currentVersionName}|${SECRET_KEY}`;
+            const hash = btoa(rawString); // Base64 encoding simples para a dinâmica da web
+            
+            const finalCode = `FAPCE-${studentMatricula}-${currentVersionName}-${hash}`;
+            document.getElementById('validation-code').innerText = finalCode;
+        }
+
+        // --- ÁREA DO PROFESSOR ---
+        function toggleProfArea() {
+            const area = document.getElementById('prof-area');
+            area.classList.toggle('hidden');
+        }
+
+        function validateHash() {
+            const mat = document.getElementById('prof-mat').value.trim();
+            const code = document.getElementById('prof-hash').value.trim();
+            
+            if(!mat || !code) {
+                showModal('ERRO', 'Preencha Matrícula e Código.');
+                return;
+            }
+
+            const parts = code.split('-');
+            if(parts.length === 4 && parts[0] === 'FAPCE' && parts[1] === mat) {
+                const version = parts[2];
+                const providedHash = parts[3];
+                const expectedHash = btoa(`${mat}|${version}|${SECRET_KEY}`);
+                
+                if (providedHash === expectedHash) {
+                    showModal('✅ CÓDIGO AUTÊNTICO', `O código pertence ao aluno de matrícula ${mat} e ele completou a prova na versão: ${version.toUpperCase()}.`);
+                } else {
+                    showModal('❌ CÓDIGO INVÁLIDO', 'O hash de validação não corresponde aos dados. Possível fraude ou cópia.');
+                }
+            } else {
+                showModal('❌ FORMATO INVÁLIDO', 'O código fornecido não segue o padrão FAPCE ou a matrícula não bate com o início do código.');
+            }
+        }
+
+    </script>
+</body>
+</html>
